@@ -28,7 +28,9 @@ def check_recipes(nb):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    setups = [c.source for c in nb.cells if c.cell_type == 'code' and 'setup' in c.metadata.get('tags', [])]
+    setup_cells = [c for c in nb.cells if c.cell_type == 'code' and 'setup' in c.metadata.get('tags', [])]
+    setups = [c.source for c in setup_cells if 'visualization_setup' not in c.metadata.get('tags', [])]
+    visual_setups = [c.source for c in setup_cells if 'visualization_setup' in c.metadata.get('tags', [])]
     recipes = {}
     for c in nb.cells:
         if c.cell_type != 'code':
@@ -49,7 +51,8 @@ def check_recipes(nb):
             with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
                 # Only the headless independent-recipe check lacks an interactive canvas.
                 warnings.filterwarnings('ignore', message='Matplotlib is currently using agg.*', category=UserWarning)
-                for source in setups + blocks:
+                selected_setups = visual_setups if recipe_id.startswith('V') and visual_setups else setups
+                for source in selected_setups + blocks:
                     exec(compile(source, '<recipe ' + recipe_id + '>', 'exec'), namespace)
         except Exception as exc:
             raise RuntimeError('Independent recipe failed: ' + recipe_id) from exc

@@ -55,8 +55,8 @@
     },
     {
       "notebook": "02_time_series_processing_visualization.ipynb",
-      "cells": 97,
-      "code_cells": 32,
+      "cells": 116,
+      "code_cells": 51,
       "independently_checked_recipes": [
         "D01",
         "D02",
