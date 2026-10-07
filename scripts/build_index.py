@@ -20,10 +20,10 @@ def recipe_id(cell):
 def main():
     image_dir = ROOT / 'docs' / 'images'
     image_dir.mkdir(parents=True, exist_ok=True)
-    lines = ['# 模板场景索引', '', 'P / D 模板先运行对应 notebook 的初始化单元。V 模板只需 B 部分的 import：先看输入表和任务，再复制绘图格；没有自己的 df 时先运行该案例的示例建表格。无需先运行其他模板。',
+    lines = ['# 模板场景索引', '', 'P / D 模板先运行对应 notebook 的初始化单元。V 模板只需 B 部分的 import，S 美观版先运行它自己的主题初始化格。先看输入表和任务，再复制绘图格；没有自己的 df 时先运行该案例的示例建表格。无需先运行其他模板。',
              '在 GitHub notebook 中搜索编号即可定位。HTML 阅读版下载后可离线打开。', '']
-    gallery = ['# 图表预览', '', '以下图片直接取自已执行的 02 notebook。每个 V 案例按「输入表 → 要做什么 → 示例建表 / 绘图代码 → 图形结果」排列，复制时用自己的 df 替换示例表即可。', '']
-    for path in sorted((ROOT / 'notebooks').glob('0[12]_*.ipynb')):
+    gallery = ['# 图表预览', '', '以下图片直接取自已执行的 02 基础版与 02b 美观版 notebook。V / S 案例均按「输入表 → 要做什么 → 示例建表 / 绘图代码 → 图形结果」排列，复制时用自己的 df 替换示例表即可。', '']
+    for path in sorted((ROOT / 'notebooks').glob('0[12]*_*.ipynb')):
         nb = nbformat.read(str(path), 4)
         lines += ['## ' + path.stem, '', '[打开 Notebook](../notebooks/' + path.name + ')', '',
                   '| 编号 | 场景 / 模板 |', '|---|---|']
@@ -45,7 +45,7 @@ def main():
                 seen.add(rid)
             images = [o['data']['image/png'] for o in cell.get('outputs', []) if 'image/png' in o.get('data', {})]
             for i, data in enumerate(images):
-                name = path.name[:2] + '-' + rid.lower() + '-' + str(i + 1) + '.png'
+                name = path.stem.split('_', 1)[0] + '-' + rid.lower() + '-' + str(i + 1) + '.png'
                 (image_dir / name).write_bytes(base64.b64decode(data))
                 gallery += ['## ' + current_title, '', '![' + rid + '](images/' + name + ')', '']
         lines += ['', '本册共 ' + str(len(seen)) + ' 个可独立执行的模板。', '']

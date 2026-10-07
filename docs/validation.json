@@ -91,6 +91,33 @@
       ],
       "embedded_figures": 18,
       "errors": 0
+    },
+    {
+      "notebook": "02b_time_series_visualization_polished.ipynb",
+      "cells": 75,
+      "code_cells": 37,
+      "independently_checked_recipes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16",
+        "S17",
+        "S18"
+      ],
+      "embedded_figures": 18,
+      "errors": 0
     }
   ]
 }

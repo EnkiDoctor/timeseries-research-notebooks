@@ -3,7 +3,7 @@
 面向限时数据分析的参考手册：**按问题找模板，复制初始化单元和对应代码，修改字段，再检查输出。**
 内容以时间序列与多资产面板为主，也适用于设备监测、业务指标和其他带时间戳的数据。
 
-**70 个可独立运行的模板 · 18 张实际示例图 · 中文场景说明和代码注释。**
+**70 个基础模板 + 18 个美观版变体 · 36 张实际示例图 · 中文场景说明和代码注释。**
 
 ## 直接打开
 
@@ -11,32 +11,35 @@
 |---|---|---|
 | [01 · pandas 场景模板](notebooks/01_pandas_time_series_templates.ipynb) | 读写、清洗、索引、分组、拼表、时间窗口、重采样、时区、时点连接 | 已完成 |
 | [02 · 时间序列数据处理与可视化](notebooks/02_time_series_processing_visualization.ipynb) | 数据质量、缺失与异常、特征与标签，以及按研究问题选择图表 | 已完成 |
+| [02b · 可视化美观版](notebooks/02b_time_series_visualization_polished.ipynb) | 相同输入表，统一主题、清晰标注、数值热图与汇报用图形 | 已完成 |
 | [03 · 建模、策略应用与回测](notebooks/03_modeling_and_backtesting.ipynb) | 预留后续内容 | 尚未实现，仅说明范围 |
 
-- **[按场景检索所有模板](docs/RECIPE_INDEX.md)**：也可在 notebook 中搜索 `P01`、`D01`、`V01` 等编号。
+- **[按场景检索所有模板](docs/RECIPE_INDEX.md)**：也可在 notebook 中搜索 `P01`、`D01`、`V01`、`S01` 等编号。
 - **[数据接入指南](docs/DATA_ADAPTER.md)**：把陌生数据映射到模板字段，而不是硬套金融含义。
 - **[运行与兼容说明](docs/COMPATIBILITY.md)**：Python 3.8 参考环境与版本差异。
 - `docs/` 中的同名 HTML 是已运行的只读版本，下载后用浏览器打开。GitHub 中直接打开 `.ipynb` 可以查看代码、表格和内嵌图片。
 
-## 图表预览
+## 美观版预览
+
+基础版 V01–V18 和美观版 S01–S18 一一对应，使用相同输入表。美观版文件独立，主题只需初始化一次。
 
 每个可视化案例按 **输入数据表 → 要做什么 → 代码 → 图形结果** 排列。输入表逐行展示，列名统一从 `df` 读取，完整预览见 [图表目录](docs/GALLERY.md)。
 
 绘图统一采用 `plt.figure(figsize=(...))`、`plt.plot()`、`plt.title()`、`plt.xlabel()` 等写法。
 每个案例只画一张简单图，最后用 `plt.tight_layout()` 和 `plt.show()` 展示；无需管理子图或坐标轴对象。
 
-| 缺失热图：找成片缺口 | 相关矩阵：另附样本量表 |
+| 收益路径：突出最大波动 | 相关矩阵：直接标出数值 |
 |---|---|
-| ![V03 缺失热图](docs/images/02-v03-1.png) | ![V09 收益相关矩阵](docs/images/02-v09-1.png) |
-| 月度热图：输入完整月收益 | 时序诊断：收益自相关 |
-| ![V13 月度收益热图](docs/images/02-v13-1.png) | ![V11 自相关](docs/images/02-v11-1.png) |
+| ![S01 美观版收益图](docs/images/02b-s01-1.png) | ![S09 美观版相关矩阵](docs/images/02b-s09-1.png) |
+| 月度收益：百分数与灰色缺失格 | 回撤：标出区间最深跌幅 |
+| ![S13 美观版月度热图](docs/images/02b-s13-1.png) | ![S17 美观版回撤](docs/images/02b-s17-1.png) |
 
 ## 怎么复制最省时间
 
 1. **P / D 模板**：先运行对应 notebook 的 setup，再选择模板。
-2. **V 可视化案例**：只运行 B 部分的 import，看案例开头的输入表及任务说明。
+2. **V 基础可视化**：只运行 02 的 B 部分 import。**S 美观版**：运行 02b 开头的主题初始化格。然后看案例的输入表及任务说明。
 3. 已有自己的 `df`：对齐示例列名与单位，直接运行“绘图代码”格。没有数据：先运行同一案例的“示例建表”格。
-4. 每个 V 案例使用独立小表，不依赖 `demo_panel`、`wide_ret` 等全局数据，也不依赖其他案例。日期转换、排序等必要步骤留在绘图格中。
+4. 每个 V / S 案例使用独立小表，不依赖 `demo_panel`、`wide_ret` 等全局数据，也不依赖其他案例。日期转换、排序等必要步骤留在绘图格中。
 5. 示例数据很小，只用于看懂代码。真实分析要确认频率、缺失、样本量和信息时点；预测研究先保留未来测试区间。
 
 这里的图表全部来自可复现的合成示例，**不代表真实市场规律或可盈利策略**。中文说明与注释解释用途，图内使用英文标签以避免运行环境缺少中文字体。
@@ -74,7 +77,7 @@ python -m jupyterlab
 
 Windows 的激活命令为 `.venv\Scripts\activate`；PowerShell 可运行 `.venv\Scripts\Activate.ps1`。
 `requirements-py38.txt` 是练习用的固定版本组合，不代表任何现场机器的实际依赖版本。
-如使用较新的 Python，可使用 `requirements.txt`。打开两本完成的 notebook 后，选择 **Restart Kernel → Run All**。
+如使用较新的 Python，可使用 `requirements.txt`。打开任一本已完成的 notebook 后，选择 **Restart Kernel → Run All**。
 核心示例运行时不访问网络，不需要 API key，也无需下载真实行情。
 
 ### 验证和生成阅读版
@@ -83,12 +86,12 @@ Windows 的激活命令为 `.venv\Scripts\activate`；PowerShell 可运行 `.ven
 python scripts/run_notebooks.py --check-recipes --html
 ```
 
-该命令从干净 kernel 执行两本 notebook，再逐个检查“初始化＋单独模板”，结果写入忽略的 `artifacts/`。
+该命令从干净 kernel 执行三本已完成的 notebook（01、02、02b），再逐个检查“初始化＋单独模板”，结果写入忽略的 `artifacts/`。
 维护者加上 `--write` 可更新已提交 notebook 的输出、`docs/` 阅读版与验证报告；随后运行 `python scripts/build_index.py` 更新目录。
-生成脚本在 `scripts/build_01.py`、`scripts/build_02.py`，可视化小表和短代码在 `scripts/visualization_cases.py`；日常学习无需运行它们。重新生成会覆盖 notebook，请先保存自己的修改。
+生成脚本在 `scripts/build_01.py`、`scripts/build_02.py`、`scripts/build_02b.py`；基础小表在 `scripts/visualization_cases.py`，美观版写法在 `scripts/polished_visualization_cases.py`；日常学习无需运行它们。重新生成会覆盖 notebook，请先保存自己的修改。
 
 本地已验证两套环境：Python 3.8.20 / pandas 1.5.3 / NumPy 1.24.4 / Matplotlib 3.7.5，以及 Python 3.12.14 / pandas 2.2.3 / NumPy 2.3.5 / Matplotlib 3.11.2。
-两本合计 92 个代码格从干净 kernel 执行，70 个模板逐个独立检查通过。详细记录见 [旧版环境报告](docs/validation.json) 与 [新版环境报告](docs/validation-modern.json)。
+三本合计 129 个代码格从干净 kernel 执行，88 个模板及变体逐个独立检查通过。详细记录见 [旧版环境报告](docs/validation.json) 与 [新版环境报告](docs/validation-modern.json)。
 
 ## 关键约定
 
