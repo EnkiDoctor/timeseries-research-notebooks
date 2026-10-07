@@ -1,0 +1,12 @@
+work/
+.venv*/
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.env.*
+data/local/
+data/downloads/
+artifacts/
+*.log
