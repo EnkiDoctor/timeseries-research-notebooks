@@ -22,6 +22,9 @@
 
 每张图都附有“何时用、输入是什么、如何读、容易误判什么”，完整预览见 [图表目录](docs/GALLERY.md)。
 
+绘图统一采用 `plt.figure(figsize=(...))`、`plt.plot()`、`plt.title()`、`plt.xlabel()` 等写法。
+多子图先用 `plt.subplot()` 或 `plt.subplot2grid()` 选中位置，再通过 `plt.*` 设置当前子图；最后用 `plt.tight_layout()` 和 `plt.show()` 展示。
+
 | 缺失热图：找成片缺口 | 相关矩阵：同时检查样本量 |
 |---|---|
 | ![V03 缺失热图](docs/images/02-v03-1.png) | ![V09 相关系数与有效样本数](docs/images/02-v09-1.png) |

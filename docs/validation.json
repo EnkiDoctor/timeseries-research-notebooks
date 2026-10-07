@@ -92,6 +92,5 @@
       "embedded_figures": 18,
       "errors": 0
     }
-  ],
-  "note": "Actual local legacy validation uses Python 3.8.20, not the exact interview patch 3.8.7."
+  ]
 }

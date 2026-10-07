@@ -522,6 +522,8 @@ display(joined[["date", "event_count", "valid_weighted_count", "quantity", "weig
 md("""
 ## B · 可视化：每张图回答一个问题
 
+**绘图语法统一用 `plt.*`：** `plt.figure(figsize=(宽, 高))` 新建一张图，避免重复运行时叠到旧图；`plt.subplot(行数, 列数, 位置)` 选择当前子图，位置从 1 开始，后续的 `plt.plot()`、`plt.title()`、`plt.xlabel()` 等都作用于当前子图。比例不同的分图用 `plt.subplot2grid()`；需要共用坐标范围时，分别用 `plt.xlim()` / `plt.ylim()` 设置相同范围。每个模板最后调用 `plt.tight_layout()` 和 `plt.show()`。
+
 图不负责证明因果或预测能力。先标明时间范围、频率、单位和样本数量，再讨论形状。以下模板都直接使用 setup 数据，因此可以按需要跳转运行。英文图名中的 `return` 指小数收益，`level` 指数值水平，`observed` 指有效观测，`train/test` 指训练期/测试期。
 """)
 
@@ -531,13 +533,22 @@ recipe("V01", "水平与变化并排：先分清趋势和波动",
 "wide_price / wide_ret，一条正值水平序列及其变化率。",
 """
 v01_asset = "Alpha"
-fig, axes = plt.subplots(2, 1, figsize=(11, 6), sharex=True)
-axes[0].plot(wide_price.index, wide_price[v01_asset], color=COLORS[0])
-axes[0].set(title="Level and daily changes: " + v01_asset, ylabel="Synthetic price")
-axes[1].plot(wide_ret.index, wide_ret[v01_asset] * 100, color=COLORS[1], linewidth=0.7)
-axes[1].axhline(0, color="black", linewidth=0.7)
-axes[1].set(ylabel="Daily return (%)", xlabel="Date")
-fig.tight_layout()
+# 每个模板新建 figure；subplot 选中后，后面的 plt.* 都画在当前子图上。
+plt.figure(figsize=(11, 6))
+time_limits = (min(wide_price.index.min(), wide_ret.index.min()),
+               max(wide_price.index.max(), wide_ret.index.max()))
+plt.subplot(2, 1, 1)
+plt.plot(wide_price.index, wide_price[v01_asset], color=COLORS[0])
+plt.title("Level and daily changes: " + v01_asset)
+plt.ylabel("Synthetic price")
+plt.xlim(*time_limits)
+plt.subplot(2, 1, 2)
+plt.plot(wide_ret.index, wide_ret[v01_asset] * 100, color=COLORS[1], linewidth=0.7)
+plt.axhline(0, color="black", linewidth=0.7)
+plt.ylabel("Daily return (%)")
+plt.xlabel("Date")
+plt.xlim(*time_limits)
+plt.tight_layout()
 plt.show()
 """,
 "上图帮助看长期路径；下图帮助定位大变化与波动簇。相同的水平变化，在不同价格基数上可能对应不同的百分比变化。",
@@ -561,16 +572,24 @@ if not v02.loc[common_start].gt(0).all():
 rebased = v02.loc[common_start:].div(v02.loc[common_start]).mul(100)
 ncols = min(2, len(SELECTED_ASSETS))
 nrows = int(np.ceil(len(SELECTED_ASSETS) / ncols))
-fig, axes = plt.subplots(nrows, ncols, figsize=(11, min(7, 3*nrows)), sharex=True, sharey=True, squeeze=False)
+# 所有子图显式使用同样的横轴、纵轴范围，避免独立缩放误导比较。
+y_min, y_max = rebased.min().min(), rebased.max().max()
+y_padding = max((y_max - y_min) * 0.05, 1.0)
+# 小图只显示少量日期标签，避免横轴文字重叠。
+time_ticks = rebased.index[np.linspace(0, len(rebased) - 1, 4).astype(int)]
+plt.figure(figsize=(11, min(7, 3*nrows)))
 for i, asset in enumerate(SELECTED_ASSETS):
-    ax = axes.flat[i]
-    ax.plot(rebased.index, rebased[asset], color=COLORS[i % len(COLORS)])
-    ax.axhline(100, color="grey", linewidth=0.8, linestyle="--")
-    ax.set(title=asset, ylabel="Index (common start = 100)")
-for ax in list(axes.flat)[len(SELECTED_ASSETS):]:
-    ax.set_visible(False)
-fig.suptitle("Comparable paths from a common date", y=1.01)
-fig.tight_layout()
+    plt.subplot(nrows, ncols, i + 1)
+    plt.plot(rebased.index, rebased[asset], color=COLORS[i % len(COLORS)])
+    plt.axhline(100, color="grey", linewidth=0.8, linestyle="--")
+    plt.title(asset)
+    plt.ylabel("Index (common start = 100)")
+    plt.xlim(rebased.index.min(), rebased.index.max())
+    plt.xticks(time_ticks, time_ticks.strftime("%Y-%m"))
+    plt.ylim(y_min - y_padding, y_max + y_padding)
+# 对象数为奇数时，不创建多余的空子图。
+plt.suptitle("Comparable paths from a common date")
+plt.tight_layout(rect=(0, 0, 1, 0.95))
 plt.show()
 """,
 "相同 y 轴使波动幅度可比较；每个对象一格减少遮挡。100 表示共同起点，150 表示相对该起点累计增加 50%。",
@@ -585,18 +604,17 @@ v03 = dirty_panel.drop_duplicates().copy()
 v03 = v03.loc[~v03.duplicated(["date", "asset"], keep=False)]
 p = v03.pivot(index="date", columns="asset", values="price").reindex(index=dates, columns=assets)
 missing = p.isna().T
-fig, ax = plt.subplots(figsize=(11, 3.5))
-im = ax.imshow(missing.values, aspect="auto", interpolation="nearest", cmap="Blues", vmin=0, vmax=1)
-ax.set_yticks(np.arange(len(assets)))
-ax.set_yticklabels(assets)
+plt.figure(figsize=(11, 3.5))
+plt.imshow(missing.values, aspect="auto", interpolation="nearest", cmap="Blues", vmin=0, vmax=1)
+plt.yticks(np.arange(len(assets)), assets)
 ticks = np.linspace(0, len(dates)-1, 7).astype(int)
-ax.set_xticks(ticks)
-ax.set_xticklabels(dates[ticks].strftime("%Y-%m"))
-ax.set(title="Price missingness (dark = unavailable)", xlabel="Expected observation date", ylabel="Asset")
-ax.grid(False)
-cb = fig.colorbar(im, ax=ax, ticks=[0, 1], pad=0.02)
-cb.ax.set_yticklabels(["Observed", "Missing"])
-fig.tight_layout()
+plt.xticks(ticks, dates[ticks].strftime("%Y-%m"))
+plt.title("Price missingness (dark = unavailable)")
+plt.xlabel("Expected observation date")
+plt.ylabel("Asset")
+plt.grid(False)
+plt.colorbar(ticks=[0, 1], pad=0.02, label="0 = Observed | 1 = Missing")
+plt.tight_layout()
 plt.show()
 """,
 "Beta 的深色段来自有行但无价格；Delta 的深色段来自缺整行。图用于定位，D04 的表用于解释缺失类别。单个像素缺失在长历史里可能不明显，因此图表应搭配计数。",
@@ -617,14 +635,21 @@ for asset in assets:
     absent = present[asset].eq(0)
     runs = absent.groupby(absent.ne(absent.shift()).cumsum()).sum()
     longest_gap[asset] = int(runs.max())
-fig, axes = plt.subplots(1, 2, figsize=(11, 4), gridspec_kw={"width_ratios": [2, 1]})
+plt.figure(figsize=(11, 4))
+# 1 行 3 列网格：左图占 2 列，右图占 1 列。
+plt.subplot2grid((1, 3), (0, 0), colspan=2)
 for i, asset in enumerate(assets):
-    axes[0].plot(monthly_coverage.index, monthly_coverage[asset], label=asset, color=COLORS[i % len(COLORS)])
-axes[0].set(title="Monthly row coverage", ylabel="Coverage (%)", xlabel="Month", ylim=(0, 105))
-axes[0].legend(ncol=2)
-axes[1].bar(list(longest_gap), list(longest_gap.values()), color=[COLORS[i % len(COLORS)] for i in range(len(longest_gap))])
-axes[1].set(title="Longest missing run", ylabel="Expected observation slots")
-fig.tight_layout()
+    plt.plot(monthly_coverage.index, monthly_coverage[asset], label=asset, color=COLORS[i % len(COLORS)])
+plt.title("Monthly row coverage")
+plt.ylabel("Coverage (%)")
+plt.xlabel("Month")
+plt.ylim(0, 105)
+plt.legend(ncol=2)
+plt.subplot2grid((1, 3), (0, 2))
+plt.bar(list(longest_gap), list(longest_gap.values()), color=[COLORS[i % len(COLORS)] for i in range(len(longest_gap))])
+plt.title("Longest missing run")
+plt.ylabel("Expected observation slots")
+plt.tight_layout()
 plt.show()
 display(pd.Series(longest_gap, name="longest_missing_run").to_frame())
 """,
@@ -637,16 +662,22 @@ recipe("V05", "直方图 + ECDF + 尾部分位数",
 "一条收益/误差/增量序列；多对象比较时应保证单位一致。",
 """
 v05 = wide_ret["Alpha"].dropna() * 100
-fig, axes = plt.subplots(1, 2, figsize=(11, 4))
-axes[0].hist(v05, bins=45, color=COLORS[0], alpha=0.8, edgecolor="white")
-axes[0].axvline(v05.median(), color=COLORS[1], label="Median")
-axes[0].set(title="Daily return distribution", xlabel="Return (%)", ylabel="Count")
-axes[0].legend()
+plt.figure(figsize=(11, 4))
+plt.subplot(1, 2, 1)
+plt.hist(v05, bins=45, color=COLORS[0], alpha=0.8, edgecolor="white")
+plt.axvline(v05.median(), color=COLORS[1], label="Median")
+plt.title("Daily return distribution")
+plt.xlabel("Return (%)")
+plt.ylabel("Count")
+plt.legend()
 x = np.sort(v05.values)
 y = np.arange(1, len(x)+1) / len(x)
-axes[1].step(x, y, where="post", color=COLORS[2])
-axes[1].set(title="Empirical CDF", xlabel="Return (%)", ylabel="Fraction at or below x")
-fig.tight_layout()
+plt.subplot(1, 2, 2)
+plt.step(x, y, where="post", color=COLORS[2])
+plt.title("Empirical CDF")
+plt.xlabel("Return (%)")
+plt.ylabel("Fraction at or below x")
+plt.tight_layout()
 plt.show()
 quantiles = v05.quantile([0.001, 0.01, 0.05, 0.5, 0.95, 0.99, 0.999])
 display(quantiles.rename("return_percent").to_frame())
@@ -664,15 +695,17 @@ v06 = wide_ret["Alpha"]
 train = v06.loc[v06.index < train_cutoff].dropna()
 lo, hi = train.quantile([0.01, 0.99])
 flag = v06.lt(lo) | v06.gt(hi)
-fig, ax = plt.subplots(figsize=(11, 4))
-ax.plot(v06.index, v06 * 100, color=COLORS[0], linewidth=0.7, label="Observed return")
-ax.scatter(v06.index[flag], v06.loc[flag] * 100, color=COLORS[1], s=24, label="Outside train 1%-99%", zorder=3)
-ax.axhline(lo * 100, color="grey", linestyle="--", linewidth=0.8)
-ax.axhline(hi * 100, color="grey", linestyle="--", linewidth=0.8)
-ax.axvline(train_cutoff, color="black", linestyle=":", label="Train cutoff")
-ax.set(title="Flag extremes while retaining their values", ylabel="Daily return (%)", xlabel="Date")
-ax.legend(ncol=2)
-fig.tight_layout()
+plt.figure(figsize=(11, 4))
+plt.plot(v06.index, v06 * 100, color=COLORS[0], linewidth=0.7, label="Observed return")
+plt.scatter(v06.index[flag], v06.loc[flag] * 100, color=COLORS[1], s=24, label="Outside train 1%-99%", zorder=3)
+plt.axhline(lo * 100, color="grey", linestyle="--", linewidth=0.8)
+plt.axhline(hi * 100, color="grey", linestyle="--", linewidth=0.8)
+plt.axvline(train_cutoff, color="black", linestyle=":", label="Train cutoff")
+plt.title("Flag extremes while retaining their values")
+plt.ylabel("Daily return (%)")
+plt.xlabel("Date")
+plt.legend(ncol=2)
+plt.tight_layout()
 plt.show()
 display(v06.loc[flag].sort_values(key=np.abs, ascending=False).head(8).rename("flagged_return").to_frame())
 """,
@@ -688,13 +721,19 @@ v07 = wide_ret["Alpha"]
 window = 60
 rolling_mean = v07.rolling(window, min_periods=window).mean()
 rolling_vol = v07.rolling(window, min_periods=window).std(ddof=1) * np.sqrt(PERIODS_PER_YEAR)
-fig, axes = plt.subplots(2, 1, figsize=(11, 6), sharex=True)
-axes[0].plot(v07.index, rolling_mean * 100, color=COLORS[0])
-axes[0].axhline(0, color="grey", linewidth=0.8)
-axes[0].set(title="Trailing 60-observation statistics", ylabel="Mean daily return (%)")
-axes[1].plot(v07.index, rolling_vol * 100, color=COLORS[1])
-axes[1].set(ylabel="Annualized volatility (%)", xlabel="Date")
-fig.tight_layout()
+plt.figure(figsize=(11, 6))
+plt.subplot(2, 1, 1)
+plt.plot(v07.index, rolling_mean * 100, color=COLORS[0])
+plt.axhline(0, color="grey", linewidth=0.8)
+plt.title("Trailing 60-observation statistics")
+plt.ylabel("Mean daily return (%)")
+plt.xlim(v07.index.min(), v07.index.max())
+plt.subplot(2, 1, 2)
+plt.plot(v07.index, rolling_vol * 100, color=COLORS[1])
+plt.ylabel("Annualized volatility (%)")
+plt.xlabel("Date")
+plt.xlim(v07.index.min(), v07.index.max())
+plt.tight_layout()
 plt.show()
 """,
 "滚动图展示历史窗口的变化，窗口越长越平滑但反应越慢。年化波动此处使用 sqrt(252) 的常见尺度换算；它依赖日频且隐含简化假设。",
@@ -710,13 +749,21 @@ window = 90
 valid_pair = pair.notna().all(axis=1)
 rolling_n = valid_pair.astype(int).rolling(window, min_periods=window).sum()
 rolling_corr = pair["Alpha"].rolling(window, min_periods=window).corr(pair["Beta"])
-fig, axes = plt.subplots(2, 1, figsize=(11, 5.5), sharex=True, gridspec_kw={"height_ratios": [3, 1]})
-axes[0].plot(pair.index, rolling_corr, color=COLORS[2])
-axes[0].axhline(0, color="grey", linewidth=0.8)
-axes[0].set(title="Trailing 90-observation return correlation", ylabel="Pearson correlation", ylim=(-1, 1))
-axes[1].plot(pair.index, rolling_n, color=COLORS[0])
-axes[1].set(ylabel="Pair count", xlabel="Date")
-fig.tight_layout()
+plt.figure(figsize=(11, 5.5))
+# 上图占 3 行、下图占 1 行；两图设置同样的时间范围。
+plt.subplot2grid((4, 1), (0, 0), rowspan=3)
+plt.plot(pair.index, rolling_corr, color=COLORS[2])
+plt.axhline(0, color="grey", linewidth=0.8)
+plt.title("Trailing 90-observation return correlation")
+plt.ylabel("Pearson correlation")
+plt.ylim(-1, 1)
+plt.xlim(pair.index.min(), pair.index.max())
+plt.subplot2grid((4, 1), (3, 0))
+plt.plot(pair.index, rolling_n, color=COLORS[0])
+plt.ylabel("Pair count")
+plt.xlabel("Date")
+plt.xlim(pair.index.min(), pair.index.max())
+plt.tight_layout()
 plt.show()
 """,
 "上图是窗口内的同期相关；下图保证看得见有效样本量。相关变化可能来自共同因子强度、特异波动或样本构成变化。",
@@ -732,25 +779,26 @@ v09.loc[dates[:180], "Delta"] = np.nan
 corr = v09.corr(min_periods=200)
 valid = v09.notna().astype(int)
 pair_n = valid.T.dot(valid)
-fig, axes = plt.subplots(1, 2, figsize=(10, 4.5))
-im = axes[0].imshow(corr.values, cmap="RdBu_r", vmin=-1, vmax=1)
-im_n = axes[1].imshow(pair_n.values, cmap="Blues")
-for ax, matrix, title, fmt in [(axes[0], corr, "Return correlations", ".2f"), (axes[1], pair_n, "Pairwise valid counts", ".0f")]:
-    ax.set_xticks(np.arange(len(matrix.columns)))
-    ax.set_xticklabels(matrix.columns, rotation=25)
-    ax.set_yticks(np.arange(len(matrix.index)))
-    ax.set_yticklabels(matrix.index)
-    ax.set_title(title)
-    ax.grid(False)
+plt.figure(figsize=(10, 4.5))
+for panel_number, matrix, title, fmt in [(1, corr, "Return correlations", ".2f"), (2, pair_n, "Pairwise valid counts", ".0f")]:
+    plt.subplot(1, 2, panel_number)
+    if panel_number == 1:
+        plt.imshow(matrix.values, cmap="RdBu_r", vmin=-1, vmax=1)
+    else:
+        plt.imshow(matrix.values, cmap="Blues")
+    plt.xticks(np.arange(len(matrix.columns)), matrix.columns, rotation=25)
+    plt.yticks(np.arange(len(matrix.index)), matrix.index)
+    plt.title(title)
+    plt.grid(False)
     for i in range(len(matrix)):
         for j in range(len(matrix)):
             val = matrix.iloc[i, j]
             label = format(val, fmt) if pd.notna(val) else "NA"
-            ax.text(j, i, label, ha="center", va="center", fontsize=10,
-                    bbox={"facecolor": "white", "alpha": 0.75, "edgecolor": "none", "pad": 1})
-fig.colorbar(im, ax=axes[0], fraction=0.045, pad=0.04)
-fig.colorbar(im_n, ax=axes[1], fraction=0.045, pad=0.04)
-fig.tight_layout()
+            plt.text(j, i, label, ha="center", va="center", fontsize=10,
+                     bbox={"facecolor": "white", "alpha": 0.75, "edgecolor": "none", "pad": 1})
+    # 当前子图刚画完热图，colorbar 会对应这张热图。
+    plt.colorbar(fraction=0.045, pad=0.04)
+plt.tight_layout()
 plt.show()
 """,
 "左边报告线性同期关系，右边显示每对变量究竟用了多少共同日期。Delta 的相关样本期不同，因此其数值可能同时受样本阶段影响。",
@@ -765,14 +813,18 @@ v10 = pd.DataFrame({"x_t": wide_ret["Alpha"], "y_next": wide_ret["Alpha"].shift(
 # 同一共同样本计算 Pearson 与 Spearman；rank().corr() 不需要 scipy。
 pearson = v10["x_t"].corr(v10["y_next"])
 spearman = v10["x_t"].rank(method="average").corr(v10["y_next"].rank(method="average"))
-fig, ax = plt.subplots(figsize=(7.5, 5))
-ax.scatter(v10["x_t"] * 100, v10["y_next"] * 100, s=13, alpha=0.3, color=COLORS[0])
-ax.axhline(0, color="grey", linewidth=0.7)
-ax.axvline(0, color="grey", linewidth=0.7)
-ax.set(title="Lag scatter: r(t) vs r(t+1)", xlabel="Known return at t (%)", ylabel="Next return (%)")
-ax.text(0.03, 0.97, "n={}\\nPearson={:.3f}\\nSpearman={:.3f}".format(len(v10), pearson, spearman),
-        transform=ax.transAxes, va="top", bbox={"facecolor": "white", "alpha": 0.9, "edgecolor": "none"})
-fig.tight_layout()
+plt.figure(figsize=(7.5, 5))
+plt.scatter(v10["x_t"] * 100, v10["y_next"] * 100, s=13, alpha=0.3, color=COLORS[0])
+plt.axhline(0, color="grey", linewidth=0.7)
+plt.axvline(0, color="grey", linewidth=0.7)
+plt.title("Lag scatter: r(t) vs r(t+1)")
+plt.xlabel("Known return at t (%)")
+plt.ylabel("Next return (%)")
+# axes fraction 表示子图内部比例坐标，(0, 0) 在左下角，(1, 1) 在右上角。
+plt.annotate("n={}\\nPearson={:.3f}\\nSpearman={:.3f}".format(len(v10), pearson, spearman),
+             xy=(0.03, 0.97), xycoords="axes fraction", va="top",
+             bbox={"facecolor": "white", "alpha": 0.9, "edgecolor": "none"})
+plt.tight_layout()
 plt.show()
 """,
 "Pearson 看线性关系，Spearman 看秩的单调关系。二者都弱时，散点仍能揭示异方差或极值。此图展示探索关系，不是经过独立测试的预测结果。",
@@ -790,16 +842,25 @@ acf_return = pd.Series([v11.autocorr(lag=int(k)) for k in lags], index=lags)
 acf_abs = pd.Series([v11.abs().autocorr(lag=int(k)) for k in lags], index=lags)
 # 仅作“白噪声独立近似”的参考线，不是异方差/重叠序列的可靠置信区间。
 reference = 1.96 / np.sqrt(v11.notna().sum())
-fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
-for ax, values, title, color in [(axes[0], acf_return, "Return ACF", COLORS[0]), (axes[1], acf_abs, "Absolute-return ACF", COLORS[1])]:
-    ax.vlines(lags, 0, values, color=color, linewidth=2)
-    ax.scatter(lags, values, color=color, s=10)
-    ax.axhline(0, color="black", linewidth=0.7)
-    ax.axhline(reference, color="grey", linestyle="--", label="IID reference only")
-    ax.axhline(-reference, color="grey", linestyle="--")
-    ax.set(title=title, xlabel="Lag (observation slots)", ylabel="Autocorrelation")
-axes[0].legend(fontsize=9)
-fig.tight_layout()
+# 两图显式使用同样的纵轴范围，包含参考线与两组 ACF 的全部值。
+acf_min = min(acf_return.min(), acf_abs.min(), -reference)
+acf_max = max(acf_return.max(), acf_abs.max(), reference)
+acf_padding = max((acf_max - acf_min) * 0.05, 0.01)
+plt.figure(figsize=(11, 4))
+for panel_number, values, title, color in [(1, acf_return, "Return ACF", COLORS[0]), (2, acf_abs, "Absolute-return ACF", COLORS[1])]:
+    plt.subplot(1, 2, panel_number)
+    plt.vlines(lags, 0, values, color=color, linewidth=2)
+    plt.scatter(lags, values, color=color, s=10)
+    plt.axhline(0, color="black", linewidth=0.7)
+    plt.axhline(reference, color="grey", linestyle="--", label="IID reference only")
+    plt.axhline(-reference, color="grey", linestyle="--")
+    plt.title(title)
+    plt.xlabel("Lag (observation slots)")
+    plt.ylabel("Autocorrelation")
+    plt.ylim(acf_min - acf_padding, acf_max + acf_padding)
+    if panel_number == 1:
+        plt.legend(fontsize=9)
+plt.tight_layout()
 plt.show()
 """,
 "收益方向的自相关可以很弱，而绝对收益呈现更明显的持续性；这正是波动簇可能出现的形状。横轴是观测格数，不是自然日。",
@@ -814,17 +875,20 @@ v12_daily = wide_ret["Alpha"].dropna()
 weekday_groups = [v12_daily.loc[v12_daily.index.dayofweek == k] * 100 for k in range(5)]
 hours = np.arange(9, 17)
 hour_groups = [events.loc[events["timestamp"].dt.hour.eq(h), "value"] for h in hours]
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
-axes[0].boxplot(weekday_groups, showfliers=True, flierprops={"markersize": 2})
+plt.figure(figsize=(11, 4.5))
+plt.subplot(1, 2, 1)
+plt.boxplot(weekday_groups, showfliers=True, flierprops={"markersize": 2})
 # 单独设置刻度，避免不同 Matplotlib 版本 labels / tick_labels 参数变化。
-axes[0].set_xticks(np.arange(1, 6))
-axes[0].set_xticklabels(["Mon", "Tue", "Wed", "Thu", "Fri"])
-axes[0].set(title="Weekday distribution", ylabel="Daily return (%)")
-axes[1].boxplot(hour_groups, showfliers=True, flierprops={"markersize": 2})
-axes[1].set_xticks(np.arange(1, len(hours) + 1))
-axes[1].set_xticklabels([str(h) for h in hours])
-axes[1].set(title="Event-level values by local hour", ylabel="Event value", xlabel="Hour")
-fig.tight_layout()
+plt.xticks(np.arange(1, 6), ["Mon", "Tue", "Wed", "Thu", "Fri"])
+plt.title("Weekday distribution")
+plt.ylabel("Daily return (%)")
+plt.subplot(1, 2, 2)
+plt.boxplot(hour_groups, showfliers=True, flierprops={"markersize": 2})
+plt.xticks(np.arange(1, len(hours) + 1), [str(h) for h in hours])
+plt.title("Event-level values by local hour")
+plt.ylabel("Event value")
+plt.xlabel("Hour")
+plt.tight_layout()
 plt.show()
 display(pd.DataFrame({"weekday": ["Mon", "Tue", "Wed", "Thu", "Fri"], "n": [len(x) for x in weekday_groups]}))
 display(pd.DataFrame({"hour": hours, "event_n": [len(x) for x in hour_groups]}))
@@ -849,23 +913,22 @@ years = sorted(frame["year"].unique())
 matrix = frame.pivot(index="year", columns="month", values="ret").reindex(index=years, columns=range(1, 13)) * 100
 counts = frame.pivot(index="year", columns="month", values="n").reindex(index=years, columns=range(1, 13))
 limit = max(1, np.nanmax(np.abs(matrix.values)))
-fig, ax = plt.subplots(figsize=(11, 4))
-cmap = plt.get_cmap("RdBu_r").copy()
-cmap.set_bad("#e5e7eb")
-im = ax.imshow(matrix.values, cmap=cmap, vmin=-limit, vmax=limit, aspect="auto")
-ax.set_xticks(np.arange(12))
-ax.set_xticklabels(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])
-ax.set_yticks(np.arange(len(years)))
-ax.set_yticklabels(years)
-ax.set_title("Complete-month compounded returns (%)")
-ax.grid(False)
+plt.figure(figsize=(11, 4))
+plt.imshow(matrix.values, cmap="RdBu_r", vmin=-limit, vmax=limit, aspect="auto")
+plt.xticks(np.arange(12), ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])
+plt.yticks(np.arange(len(years)), years)
+plt.title("Complete-month compounded returns (%)")
+plt.grid(False)
 for i in range(len(years)):
     for j in range(12):
         value = matrix.iloc[i, j]
-        ax.text(j, i, "{:.1f}".format(value) if pd.notna(value) else "NA", ha="center", va="center", fontsize=9,
-                bbox={"facecolor": "white", "alpha": 0.6, "edgecolor": "none", "pad": 0.5})
-fig.colorbar(im, ax=ax, label="Monthly return (%)", fraction=0.03, pad=0.02)
-fig.tight_layout()
+        if pd.isna(value):
+            # 给无有效月收益的格子涂灰；缺失既不是 0，也不参与颜色尺度。
+            plt.fill_between([j - 0.5, j + 0.5], i - 0.5, i + 0.5, color="#e5e7eb", linewidth=0)
+        plt.text(j, i, "{:.1f}".format(value) if pd.notna(value) else "NA", ha="center", va="center", fontsize=9,
+                 bbox={"facecolor": "white", "alpha": 0.6, "edgecolor": "none", "pad": 0.5})
+plt.colorbar(label="Monthly return (%)", fraction=0.03, pad=0.02)
+plt.tight_layout()
 plt.show()
 display(counts.rename_axis("valid_daily_return_count"))
 """,
@@ -878,14 +941,26 @@ recipe("V14", "量价关系优先用共享时间轴分图",
 "demo_panel 单一对象的价格、收益和数量。",
 """
 v14 = demo_panel.loc[demo_panel["asset"].eq("Alpha")].set_index("date")
-fig, axes = plt.subplots(3, 1, figsize=(11, 6.5), sharex=True, gridspec_kw={"height_ratios": [2, 1, 1]})
-axes[0].plot(v14.index, v14["price"], color=COLORS[0])
-axes[0].set(title="Level, return and activity on a shared time axis", ylabel="Price")
-axes[1].plot(v14.index, v14["ret"] * 100, color=COLORS[1], linewidth=0.7)
-axes[1].set(ylabel="Return (%)")
-axes[2].bar(v14.index, v14["volume"] / 1000, color=COLORS[2], width=1.5)
-axes[2].set(ylabel="Volume (thousand)", xlabel="Date")
-fig.tight_layout()
+# 两端留出柱子宽度，三个子图仍使用相同时间范围。
+time_limits = (v14.index.min() - pd.Timedelta(days=1),
+               v14.index.max() + pd.Timedelta(days=1))
+plt.figure(figsize=(11, 6.5))
+# 4 行网格中，上图占 2 行，其余各占 1 行。
+plt.subplot2grid((4, 1), (0, 0), rowspan=2)
+plt.plot(v14.index, v14["price"], color=COLORS[0])
+plt.title("Level, return and activity on a shared time axis")
+plt.ylabel("Price")
+plt.xlim(*time_limits)
+plt.subplot2grid((4, 1), (2, 0))
+plt.plot(v14.index, v14["ret"] * 100, color=COLORS[1], linewidth=0.7)
+plt.ylabel("Return (%)")
+plt.xlim(*time_limits)
+plt.subplot2grid((4, 1), (3, 0))
+plt.bar(v14.index, v14["volume"] / 1000, color=COLORS[2], width=1.5)
+plt.ylabel("Volume (thousand)")
+plt.xlabel("Date")
+plt.xlim(*time_limits)
+plt.tight_layout()
 plt.show()
 """,
 "共享横轴可以定位同一天的共同异常，又不会让任意双轴缩放制造视觉重合。下方数量单位是千，便于读数。",
@@ -898,16 +973,18 @@ recipe("V15", "阶段背景与训练/测试切分：把评估范围画出来",
 """
 v15 = wide_ret["Alpha"]
 phase_series = demo_panel.loc[demo_panel["asset"].eq("Alpha")].set_index("date")["regime"]
-fig, ax = plt.subplots(figsize=(11, 4))
-ax.plot(v15.index, v15.rolling(40, min_periods=40).std() * 100, color=COLORS[0], label="40-observation volatility")
+plt.figure(figsize=(11, 4))
+plt.plot(v15.index, v15.rolling(40, min_periods=40).std() * 100, color=COLORS[0], label="40-observation volatility")
 phase_colors = {"calm": "#b8dbef", "stress": "#f5c4a9", "recovery": "#bde1cf"}
 for name in ["calm", "stress", "recovery"]:
     idx = phase_series.index[phase_series.eq(name)]
-    ax.axvspan(idx.min(), idx.max(), color=phase_colors[name], alpha=0.35, label="Known simulation: " + name)
-ax.axvline(train_cutoff, color="black", linestyle="--", label="Train / test boundary")
-ax.set(title="Known simulation stages and evaluation boundary", ylabel="Daily volatility (%)", xlabel="Date")
-ax.legend(ncol=2, fontsize=8.5)
-fig.tight_layout()
+    plt.axvspan(idx.min(), idx.max(), color=phase_colors[name], alpha=0.35, label="Known simulation: " + name)
+plt.axvline(train_cutoff, color="black", linestyle="--", label="Train / test boundary")
+plt.title("Known simulation stages and evaluation boundary")
+plt.ylabel("Daily volatility (%)")
+plt.xlabel("Date")
+plt.legend(ncol=2, fontsize=8.5)
+plt.tight_layout()
 plt.show()
 """,
 "背景说明生成机制和评估区间的关系。测试阶段可能与训练阶段不同，这正是模型需要面对的分布变化。",
@@ -932,11 +1009,19 @@ v16["bucket"] = pd.cut(v16["feature"], bins=edges, labels=labels, include_lowest
 v16["split"] = np.where(train_mask, "train", np.where(test_mask, "test", "purged"))
 summary = v16.loc[v16["split"].ne("purged")].groupby(["split", "bucket"], observed=False)["target"].agg(["mean", "count", "std"])
 means = summary["mean"].unstack("split").reindex(labels) * 100
-fig, ax = plt.subplots(figsize=(9, 4.5))
-means.plot.bar(ax=ax, color=[COLORS[1], COLORS[0]], rot=0)
-ax.axhline(0, color="grey", linewidth=0.8)
-ax.set(title="Feature buckets defined only on training data", xlabel="Training-defined feature bucket", ylabel="Mean next-day return (%)")
-fig.tight_layout()
+plt.figure(figsize=(9, 4.5))
+# 每个 bucket 内并列画 train / test，手动安排柱子位置，不调用 DataFrame.plot。
+positions = np.arange(len(labels))
+bar_width = 0.35
+plt.bar(positions - bar_width / 2, means["test"], width=bar_width, color=COLORS[1], label="test")
+plt.bar(positions + bar_width / 2, means["train"], width=bar_width, color=COLORS[0], label="train")
+plt.xticks(positions, labels)
+plt.axhline(0, color="grey", linewidth=0.8)
+plt.title("Feature buckets defined only on training data")
+plt.xlabel("Training-defined feature bucket")
+plt.ylabel("Mean next-day return (%)")
+plt.legend(title="split")
+plt.tight_layout()
 plt.show()
 display(summary.round(5))
 for split in ["train", "test"]:
@@ -965,15 +1050,21 @@ trough_date = drawdown.idxmin()
 peak_date = wealth.loc[:trough_date].idxmax()
 recovered = wealth.loc[trough_date:].ge(wealth.loc[peak_date])
 recovery_date = recovered.index[recovered][0] if recovered.any() else pd.NaT
-fig, axes = plt.subplots(2, 1, figsize=(11, 6), sharex=True, gridspec_kw={"height_ratios": [2, 1]})
-axes[0].plot(wealth.index, wealth, color=COLORS[0], label="Growth of 1")
-axes[0].plot(peak.index, peak, color="grey", linestyle="--", linewidth=0.9, label="Running peak")
-axes[0].set(title="Synthetic asset path and drawdown", ylabel="Wealth")
-axes[0].legend()
-axes[1].fill_between(drawdown.index, drawdown.values * 100, 0, color=COLORS[1], alpha=0.65)
-axes[1].scatter([trough_date], [drawdown.loc[trough_date] * 100], color="black", s=25)
-axes[1].set(ylabel="Drawdown (%)", xlabel="Date")
-fig.tight_layout()
+plt.figure(figsize=(11, 6))
+plt.subplot2grid((3, 1), (0, 0), rowspan=2)
+plt.plot(wealth.index, wealth, color=COLORS[0], label="Growth of 1")
+plt.plot(peak.index, peak, color="grey", linestyle="--", linewidth=0.9, label="Running peak")
+plt.title("Synthetic asset path and drawdown")
+plt.ylabel("Wealth")
+plt.xlim(wealth.index.min(), wealth.index.max())
+plt.legend()
+plt.subplot2grid((3, 1), (2, 0))
+plt.fill_between(drawdown.index, drawdown.values * 100, 0, color=COLORS[1], alpha=0.65)
+plt.scatter([trough_date], [drawdown.loc[trough_date] * 100], color="black", s=25)
+plt.ylabel("Drawdown (%)")
+plt.xlabel("Date")
+plt.xlim(wealth.index.min(), wealth.index.max())
+plt.tight_layout()
 plt.show()
 display(pd.DataFrame({"max_drawdown": [drawdown.min()], "peak_date": [peak_date], "trough_date": [trough_date], "recovery_date": [recovery_date]}))
 """,
@@ -989,13 +1080,19 @@ v18 = events.sort_values("timestamp").copy()
 v18["gap_minutes"] = v18["timestamp"].diff().dt.total_seconds() / 60
 counts = v18.set_index("timestamp")["value"].resample("1h").size()
 # 分开看相邻事件间隔；过夜/周末本来就会很长，需要业务日历解释。
-fig, axes = plt.subplots(2, 1, figsize=(11, 6), sharex=False)
-axes[0].plot(counts.index, counts, drawstyle="steps-mid", color=COLORS[0])
-axes[0].set(title="Events per clock hour, including empty clock hours", ylabel="Event count", xlabel="Clock time")
+plt.figure(figsize=(11, 6))
+plt.subplot(2, 1, 1)
+plt.plot(counts.index, counts, drawstyle="steps-mid", color=COLORS[0])
+plt.title("Events per clock hour, including empty clock hours")
+plt.ylabel("Event count")
+plt.xlabel("Clock time")
 positive_gaps = v18.loc[v18["gap_minutes"].gt(0), "gap_minutes"]
-axes[1].hist(np.log10(positive_gaps), bins=35, color=COLORS[2], edgecolor="white")
-axes[1].set(title="Distribution of inter-event gaps", xlabel="log10(gap in minutes)", ylabel="Count")
-fig.tight_layout()
+plt.subplot(2, 1, 2)
+plt.hist(np.log10(positive_gaps), bins=35, color=COLORS[2], edgecolor="white")
+plt.title("Distribution of inter-event gaps")
+plt.xlabel("log10(gap in minutes)")
+plt.ylabel("Count")
+plt.tight_layout()
 plt.show()
 display(v18[["timestamp", "gap_minutes"]].nlargest(6, "gap_minutes"))
 print("重复时间戳行数:", v18.duplicated(["timestamp", "asset"], keep=False).sum())
