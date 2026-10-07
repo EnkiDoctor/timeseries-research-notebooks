@@ -1,0 +1,11 @@
+# Reference environment for Python 3.8; not a claim about interview-machine package versions.
+numpy==1.24.4
+pandas==1.5.3
+matplotlib==3.7.5
+scipy==1.10.1
+ipython==8.12.3
+ipykernel==6.29.5
+jupyterlab==3.6.8
+nbformat==5.10.4
+nbclient==0.10.0
+nbconvert==7.16.6
