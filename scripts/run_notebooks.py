@@ -70,7 +70,7 @@ def main():
     args = parser.parse_args()
     artifacts = ROOT / 'artifacts'
     artifacts.mkdir(exist_ok=True)
-    files = sorted((ROOT / 'notebooks').glob('0[12]*_*.ipynb'))
+    files = sorted((ROOT / 'notebooks').glob('0[123]*_*.ipynb'))
     if args.notebook:
         files = [p for p in files if p.name in args.notebook]
     if not files:

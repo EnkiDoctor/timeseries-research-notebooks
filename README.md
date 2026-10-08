@@ -3,7 +3,7 @@
 面向限时数据分析的参考手册：**按问题找模板，复制初始化单元和对应代码，修改字段，再检查输出。**
 内容以时间序列与多资产面板为主，也适用于设备监测、业务指标和其他带时间戳的数据。
 
-**70 个基础模板 + 18 个美观版变体 · 36 张实际示例图 · 中文场景说明和代码注释。**
+**70 个基础模板 + 18 个美观版变体 + 18 个回测案例 · 54 张实际示例图 · 中文场景说明和代码注释。**
 
 ## 直接打开
 
@@ -12,9 +12,9 @@
 | [01 · pandas 场景模板](notebooks/01_pandas_time_series_templates.ipynb) | 读写、清洗、索引、分组、拼表、时间窗口、重采样、时区、时点连接 | 已完成 |
 | [02 · 时间序列数据处理与可视化](notebooks/02_time_series_processing_visualization.ipynb) | 数据质量、缺失与异常、特征与标签，以及按研究问题选择图表 | 已完成 |
 | [02b · 可视化美观版](notebooks/02b_time_series_visualization_polished.ipynb) | 相同输入表，统一主题、清晰标注、数值热图与汇报用图形 | 已完成 |
-| [03 · 建模、策略应用与回测](notebooks/03_modeling_and_backtesting.ipynb) | 预留后续内容 | 尚未实现，仅说明范围 |
+| [03 · 回测与可视化 Cheat Sheet](notebooks/03_modeling_and_backtesting.ipynb) | 18 种记账与评估场景，每例先 display 输入表，再给回测结果和图形 | 已完成；完整机器学习建模不在本册范围 |
 
-- **[按场景检索所有模板](docs/RECIPE_INDEX.md)**：也可在 notebook 中搜索 `P01`、`D01`、`V01`、`S01` 等编号。
+- **[按场景检索所有模板](docs/RECIPE_INDEX.md)**：也可在 notebook 中搜索 `P01`、`D01`、`V01`、`S01`、`B01` 等编号。
 - **[数据接入指南](docs/DATA_ADAPTER.md)**：把陌生数据映射到模板字段，而不是硬套金融含义。
 - **[运行与兼容说明](docs/COMPATIBILITY.md)**：Python 3.8 参考环境与版本差异。
 - `docs/` 中的同名 HTML 是已运行的只读版本，下载后用浏览器打开。GitHub 中直接打开 `.ipynb` 可以查看代码、表格和内嵌图片。
@@ -42,7 +42,28 @@
 4. 每个 V / S 案例使用独立小表，不依赖 `demo_panel`、`wide_ret` 等全局数据，也不依赖其他案例。日期转换、排序等必要步骤留在绘图格中。
 5. 示例数据很小，只用于看懂代码。真实分析要确认频率、缺失、样本量和信息时点；预测研究先保留未来测试区间。
 
+**B 回测案例：** 运行 03 的初始化格后，选择一个案例，先看实际 `display(df)` 输入表，再看执行时点与任务，接着复制回测格和绘图格。每个案例独立提供示例数据、完整输出、中文注释和使用限制，不依赖其他案例。
+
 这里的图表全部来自可复现的合成示例，**不代表真实市场规律或可盈利策略**。中文说明与注释解释用途，图内使用英文标签以避免运行环境缺少中文字体。
+
+## 回测怎么选
+
+| 数据 / 任务 | 模板 |
+|---|---|
+| 收盘前已知仓位，收盘到收盘 | B01；收盘后才生成信号用 B02 下一开盘执行 |
+| 当日开平仓；不规则日内记录 | B03 / B04 |
+| 实际换手与交易费用；每日多资产权重 | B05 / B06 宽表 / B07 长表 |
+| 每周再平衡，期间股数不变 | B08 |
+| 固定金额投入；buy/hold/sell 指令账本 | B09 / B10 |
+| 配对交易；多日持有且每天新开仓 | B11 / B12 |
+| 波动率控制；训练/验证/测试选阈值 | B13 / B14 |
+| 绩效与回撤；月度收益；相对基准；费用敏感性 | B15–B18 |
+
+| 持仓漂移：实际交易日与其余日期 | 账户权益：买卖位置与费用 |
+|---|---|
+| ![B08 每周再平衡](docs/images/03-b08-1.png) | ![B10 指令回测](docs/images/03-b10-1.png) |
+
+回测示例首先解释信号可用时点、成交价格、收益归属与资金口径；其中的交易账本可以核对现金、股数和实际成交费用。B15–B18 用于生成研究汇报中的指标和图形。
 
 ## 按问题选择图表
 
@@ -86,12 +107,12 @@ Windows 的激活命令为 `.venv\Scripts\activate`；PowerShell 可运行 `.ven
 python scripts/run_notebooks.py --check-recipes --html
 ```
 
-该命令从干净 kernel 执行三本已完成的 notebook（01、02、02b），再逐个检查“初始化＋单独模板”，结果写入忽略的 `artifacts/`。
+该命令从干净 kernel 执行四本已完成的 notebook（01、02、02b、03），再逐个检查“初始化＋单独模板”，结果写入忽略的 `artifacts/`。
 维护者加上 `--write` 可更新已提交 notebook 的输出、`docs/` 阅读版与验证报告；随后运行 `python scripts/build_index.py` 更新目录。
-生成脚本在 `scripts/build_01.py`、`scripts/build_02.py`、`scripts/build_02b.py`；基础小表在 `scripts/visualization_cases.py`，美观版写法在 `scripts/polished_visualization_cases.py`；日常学习无需运行它们。重新生成会覆盖 notebook，请先保存自己的修改。
+生成脚本在 `scripts/build_01.py`、`scripts/build_02.py`、`scripts/build_02b.py`、`scripts/build_03.py`；基础小表在 `scripts/visualization_cases.py`，美观版写法在 `scripts/polished_visualization_cases.py`，回测案例在 `scripts/backtest_cases_a.py`、`scripts/backtest_cases_b.py`、`scripts/backtest_cases_c.py`；日常学习无需运行它们。重新生成会覆盖 notebook，请先保存自己的修改。
 
 本地已验证两套环境：Python 3.8.20 / pandas 1.5.3 / NumPy 1.24.4 / Matplotlib 3.7.5，以及 Python 3.12.14 / pandas 2.2.3 / NumPy 2.3.5 / Matplotlib 3.11.2。
-三本合计 129 个代码格从干净 kernel 执行，88 个模板及变体逐个独立检查通过。详细记录见 [旧版环境报告](docs/validation.json) 与 [新版环境报告](docs/validation-modern.json)。
+四本合计 184 个代码格从干净 kernel 执行，106 个模板及变体逐个独立检查通过。回测案例另外核对了信号延迟、交易账本、成本、重叠持仓和初始本金回撤等财务恒等关系。详细记录见 [旧版环境报告](docs/validation.json) 与 [新版环境报告](docs/validation-modern.json)。
 
 ## 关键约定
 

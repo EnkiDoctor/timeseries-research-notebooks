@@ -27,7 +27,7 @@ print('matplotlib:', matplotlib.__version__)
 | `merge_asof` 报 `keys must be sorted` | 优先按连接时间全局升序，再加分组列；两边分别检查 |
 | 中文字体缺失 | 图内用英文标签，中文说明在 Markdown 与代码注释中 |
 
-三本已完成 notebook 只用 NumPy、pandas、Matplotlib、IPython；部分相关性计算需要 SciPy。Excel/Parquet 是可选读写示例，不是默认运行依赖。
+四本已完成 notebook 只用 NumPy、pandas、Matplotlib、IPython；部分相关性计算需要 SciPy。Excel/Parquet 是可选读写示例，不是默认运行依赖。
 未依赖 seaborn、statsmodels、行情 API、在线 notebook 服务或机器学习框架。
 
 如果出现报错，先查看 traceback 的最后一行、输入 `shape/dtypes/head`、索引与字段名称，再查当前版本文档。不建议在限时环境中首先升级整个环境。
@@ -35,6 +35,6 @@ print('matplotlib:', matplotlib.__version__)
 本地固定依赖：`requirements-py38.txt`。较新 Python：`requirements.txt`。
 实际验证：[`validation.json`](validation.json)。CI 从干净环境执行，并同时检验模板能否独立复制运行。
 
-另有 [Python 3.12 / pandas 2.2 验证记录](validation-modern.json)。旧版和新版均执行了全部 88 个独立模板及变体；实际现场版本仍需当场确认。
+另有 [Python 3.12 / pandas 2.2 验证记录](validation-modern.json)。旧版和新版均执行了全部 106 个独立模板及变体（含 18 个回测案例）；实际现场版本仍需当场确认。
 
 来源：[pandas 1.5 文档](https://pandas.pydata.org/pandas-docs/version/1.5/)、[Matplotlib 3.7.5 依赖](https://matplotlib.org/3.7.5/devel/dependencies.html)。
