@@ -1,6 +1,6 @@
 # 图表预览
 
-以下图片取自已执行的 02 基础版、02b 美观版与 03 回测 notebook。先看输入表、场景与任务，再查看代码和图形结果；03 每个案例先 display 输入 df，并展示回测结果表。
+以下图片取自已执行的 02 基础版、02b 美观版、03 回测与04机器学习 notebook。先看输入表、场景与任务，再查看代码和图形结果；03/04 每个案例先 display 输入 df，并展示结果表。
 
 ## V01 · 日收益：看收益随时间怎样变化
 
@@ -217,3 +217,67 @@
 ## B18 · 费用敏感性：同一交易计划在不同单边费率下重算账户
 
 ![B18](images/03-b18-1.png)
+
+## M01 · 价格表 → 因果特征、未来标签与隔离边界
+
+![M01](images/04-m01-1.png)
+
+## M02 · 线性回归：对比训练集均值基线
+
+![M02](images/04-m02-1.png)
+
+## M03 · 缺失值与量纲不同：Imputer → Scaler → Ridge
+
+![M03](images/04-m03-1.png)
+
+## M04 · 数值＋类别列：ColumnTransformer 与未知类别
+
+![M04](images/04-m04-1.png)
+
+## M05 · 涨跌分类：LogisticRegression 与混淆矩阵
+
+![M05](images/04-m05-1.png)
+
+## M06 · 涨跌分类：处理类别不平衡，在验证集选择概率阈值
+
+![M06](images/04-m06-1.png)
+
+## M07 · 决策树回归：用验证误差选择深度，观察过拟合
+
+![M07](images/04-m07-1.png)
+
+## M08 · 随机森林：学习非线性，和训练均值基准比较
+
+![M08](images/04-m08-1.png)
+
+## M09 · HistGradientBoosting：原生处理缺失值的提升树
+
+![M09](images/04-m09-1.png)
+
+## M10 · XGBoost（可选依赖）：按时间验证与 early stopping
+
+![M10](images/04-m10-1.png)
+
+## M11 · TimeSeriesSplit + GridSearchCV：带间隔的时间调参
+
+![M11](images/04-m11-1.png)
+
+## M12 · 多资产面板 Walk-forward：按日期成块滚动训练
+
+![M12](images/04-m12-1.png)
+
+## M13 · 验证集 Permutation Importance：哪些特征影响预测误差
+
+![M13](images/04-m13-1.png)
+
+## M14 · 回归诊断：残差、Rank IC 与基准误差
+
+![M14](images/04-m14-1.png)
+
+## M15 · PCA 降维：只用训练期拟合，再投影未来数据
+
+![M15](images/04-m15-1.png)
+
+## M16 · 模型预测 → 仓位 → 样本外日内回测
+
+![M16](images/04-m16-1.png)

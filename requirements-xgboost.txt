@@ -1,0 +1,2 @@
+# Optional M10 dependency for modern Python; install requirements.txt first.
+xgboost==3.1.3

@@ -3,7 +3,7 @@
 面向限时数据分析的参考手册：**按问题找模板，复制初始化单元和对应代码，修改字段，再检查输出。**
 内容以时间序列与多资产面板为主，也适用于设备监测、业务指标和其他带时间戳的数据。
 
-**70 个基础模板 + 18 个美观版变体 + 18 个回测案例 · 54 张实际示例图 · 中文场景说明和代码注释。**
+**70 个基础模板 + 18 个美观版变体 + 18 个回测案例 + 16 个机器学习案例 · 70 张实际示例图 · 中文场景说明和代码注释。**
 
 ## 直接打开
 
@@ -13,8 +13,9 @@
 | [02 · 时间序列数据处理与可视化](notebooks/02_time_series_processing_visualization.ipynb) | 数据质量、缺失与异常、特征与标签，以及按研究问题选择图表 | 已完成 |
 | [02b · 可视化美观版](notebooks/02b_time_series_visualization_polished.ipynb) | 相同输入表，统一主题、清晰标注、数值热图与汇报用图形 | 已完成 |
 | [03 · 回测与可视化 Cheat Sheet](notebooks/03_modeling_and_backtesting.ipynb) | 18 种记账与评估场景，每例先 display 输入表，再给回测结果和图形 | 已完成；完整机器学习建模不在本册范围 |
+| [04 · 机器学习与可视化 Cheat Sheet](notebooks/04_machine_learning_cheat_sheet.ipynb) | scikit-learn、树模型、可选 XGBoost、时间验证、模型诊断和预测接回测 | 已完成；每例从 DataFrame 开始 |
 
-- **[按场景检索所有模板](docs/RECIPE_INDEX.md)**：也可在 notebook 中搜索 `P01`、`D01`、`V01`、`S01`、`B01` 等编号。
+- **[按场景检索所有模板](docs/RECIPE_INDEX.md)**：也可在 notebook 中搜索 `P01`、`D01`、`V01`、`S01`、`B01`、`M01` 等编号。
 - **[数据接入指南](docs/DATA_ADAPTER.md)**：把陌生数据映射到模板字段，而不是硬套金融含义。
 - **[运行与兼容说明](docs/COMPATIBILITY.md)**：Python 3.8 参考环境与版本差异。
 - `docs/` 中的同名 HTML 是已运行的只读版本，下载后用浏览器打开。GitHub 中直接打开 `.ipynb` 可以查看代码、表格和内嵌图片。
@@ -44,6 +45,8 @@
 
 **B 回测案例：** 运行 03 的初始化格后，选择一个案例，先看实际 `display(df)` 输入表，再看执行时点与任务，接着复制回测格和绘图格。每个案例独立提供示例数据、完整输出、中文注释和使用限制，不依赖其他案例。
 
+**M 机器学习案例：** 运行 04 初始化格，再任选 M01–M16。先 `display(df.head(8))` 看字段，再解释任务和信息时点，按时间切分、训练、展示预测/指标与图形。各例使用独立合成数据，sklearn 类在该例训练格中导入；无需先运行其他案例。
+
 这里的图表全部来自可复现的合成示例，**不代表真实市场规律或可盈利策略**。中文说明与注释解释用途，图内使用英文标签以避免运行环境缺少中文字体。
 
 ## 回测怎么选
@@ -64,6 +67,25 @@
 | ![B08 每周再平衡](docs/images/03-b08-1.png) | ![B10 指令回测](docs/images/03-b10-1.png) |
 
 回测示例首先解释信号可用时点、成交价格、收益归属与资金口径；其中的交易账本可以核对现金、股数和实际成交费用。B15–B18 用于生成研究汇报中的指标和图形。
+
+## 机器学习怎么选
+
+| 数据 / 任务 | 模板 |
+|---|---|
+| 从价格构造特征与未来标签 | M01：因果窗口、label_end、边界隔离 |
+| 先做连续值预测基线 | M02：LinearRegression / DummyRegressor |
+| 数值有缺失、量纲不同；数值＋类别混合 | M03：Imputer / Scaler / Ridge；M04：ColumnTransformer / OneHotEncoder |
+| 涨跌分类；正类少与概率阈值 | M05：LogisticRegression / 混淆矩阵；M06：验证选阈值 / PR曲线 |
+| 基础树与集成 | M07：决策树；M08：随机森林；M09：HistGradientBoosting；M10：XGBoost |
+| 时间调参；多资产滚动预测 | M11：TimeSeriesSplit / GridSearchCV；M12：按日期 Walk-forward |
+| 模型解释、误差诊断、降维 | M13：置换重要性；M14：残差 / Rank IC；M15：PCA |
+| 模型怎样变成可评估的交易策略 | M16：训练/验证/测试 → 阈值 → 仓位 → 费用与净值 |
+
+| 树深度：训练与验证误差 | XGBoost：验证集决定停止轮数 |
+|---|---|
+| ![M07 决策树复杂度](docs/images/04-m07-1.png) | ![M10 XGBoost 学习曲线](docs/images/04-m10-1.png) |
+
+04 的多数目标是当日开盘到收盘收益，特征假定盘前可用；预测未来多期收益的例子另记标签实现时间。数据和切分各不相同，不应跨案例比较 RMSE 来决定哪个模型更好。
 
 ## 按问题选择图表
 
@@ -101,18 +123,22 @@ Windows 的激活命令为 `.venv\Scripts\activate`；PowerShell 可运行 `.ven
 如使用较新的 Python，可使用 `requirements.txt`。打开任一本已完成的 notebook 后，选择 **Restart Kernel → Run All**。
 核心示例运行时不访问网络，不需要 API key，也无需下载真实行情。
 
+04 的 scikit-learn 已加入基础依赖。**仅 M10 需要额外安装 XGBoost**：Python 3.8 使用 `python -m pip install -r requirements-xgboost-py38.txt`；现代 Python 使用 `python -m pip install -r requirements-xgboost.txt`。没有这个包或原生运行库时，M10 明确跳过，其余案例仍可执行。macOS 还可能需要 OpenMP，见 [兼容说明](docs/COMPATIBILITY.md)。
+
 ### 验证和生成阅读版
 
 ```bash
 python scripts/run_notebooks.py --check-recipes --html
 ```
 
-该命令从干净 kernel 执行四本已完成的 notebook（01、02、02b、03），再逐个检查“初始化＋单独模板”，结果写入忽略的 `artifacts/`。
+该命令从干净 kernel 执行五本已完成的 notebook（01、02、02b、03、04），再逐个检查“初始化＋单独模板”，结果写入忽略的 `artifacts/`。
 维护者加上 `--write` 可更新已提交 notebook 的输出、`docs/` 阅读版与验证报告；随后运行 `python scripts/build_index.py` 更新目录。
 生成脚本在 `scripts/build_01.py`、`scripts/build_02.py`、`scripts/build_02b.py`、`scripts/build_03.py`；基础小表在 `scripts/visualization_cases.py`，美观版写法在 `scripts/polished_visualization_cases.py`，回测案例在 `scripts/backtest_cases_a.py`、`scripts/backtest_cases_b.py`、`scripts/backtest_cases_c.py`；日常学习无需运行它们。重新生成会覆盖 notebook，请先保存自己的修改。
 
+04 由 `scripts/build_04.py` 与 `scripts/ml_cases_a.py`、`scripts/ml_cases_b.py`、`scripts/ml_cases_c.py` 生成。CI 会安装可选 XGBoost 并加 `--require-optional`，确保 M10 实际训练；普通运行的验证报告会列出 `skipped_optional_recipes`。
+
 本地已验证两套环境：Python 3.8.20 / pandas 1.5.3 / NumPy 1.24.4 / Matplotlib 3.7.5，以及 Python 3.12.14 / pandas 2.2.3 / NumPy 2.3.5 / Matplotlib 3.11.2。
-四本合计 184 个代码格从干净 kernel 执行，106 个模板及变体逐个独立检查通过。回测案例另外核对了信号延迟、交易账本、成本、重叠持仓和初始本金回撤等财务恒等关系。详细记录见 [旧版环境报告](docs/validation.json) 与 [新版环境报告](docs/validation-modern.json)。
+五本合计 233 个代码格从干净 kernel 执行，122 个模板及变体逐个独立检查通过。04 另验证了 scikit-learn 1.3.2 / XGBoost 2.0.3 与 scikit-learn 1.7.2 / XGBoost 3.1.3。回测核对资金记账；机器学习核对测试标签扰动不改变训练预测、时间边界、训练期预处理及预测接回测的费用计算。详细记录见 [旧版环境报告](docs/validation.json) 与 [新版环境报告](docs/validation-modern.json)。
 
 ## 关键约定
 

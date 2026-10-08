@@ -145,6 +145,34 @@
       ],
       "embedded_figures": 18,
       "errors": 0
+    },
+    {
+      "notebook": "04_machine_learning_cheat_sheet.ipynb",
+      "cells": 115,
+      "code_cells": 49,
+      "independently_checked_recipes": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14",
+        "M15",
+        "M16"
+      ],
+      "embedded_figures": 16,
+      "errors": 0,
+      "skipped_optional_recipes": []
     }
-  ]
+  ],
+  "scikit-learn": "1.7.2",
+  "xgboost": "3.1.3"
 }

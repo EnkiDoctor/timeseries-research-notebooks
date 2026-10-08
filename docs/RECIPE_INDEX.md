@@ -3,6 +3,8 @@
 P / D 模板先运行对应 notebook 的初始化单元。V 模板只需 B 部分的 import，S 美观版先运行它自己的主题初始化格。B 回测模板先运行 03 的初始化格，每例先 display 输入 df，再运行回测和绘图。先看输入表和任务；没有自己的 df 时先运行该案例的示例建表格。无需先运行其他模板。
 在 GitHub notebook 中搜索编号即可定位。HTML 阅读版下载后可离线打开。
 
+M 机器学习模板运行 04 的初始化格；每例先 display 输入 df，再按时间切分、训练、展示预测与图形。M10 需要可选 XGBoost。
+
 ## 01_pandas_time_series_templates
 
 [打开 Notebook](../notebooks/01_pandas_time_series_templates.ipynb)
@@ -144,5 +146,30 @@ P / D 模板先运行对应 notebook 的初始化单元。V 模板只需 B 部�
 | `B18` | B18 · 费用敏感性：同一交易计划在不同单边费率下重算账户 |
 
 本册共 18 个可独立执行的模板。
+
+## 04_machine_learning_cheat_sheet
+
+[打开 Notebook](../notebooks/04_machine_learning_cheat_sheet.ipynb)
+
+| 编号 | 场景 / 模板 |
+|---|---|
+| `M01` | M01 · 价格表 → 因果特征、未来标签与隔离边界 |
+| `M02` | M02 · 线性回归：对比训练集均值基线 |
+| `M03` | M03 · 缺失值与量纲不同：Imputer → Scaler → Ridge |
+| `M04` | M04 · 数值＋类别列：ColumnTransformer 与未知类别 |
+| `M05` | M05 · 涨跌分类：LogisticRegression 与混淆矩阵 |
+| `M06` | M06 · 涨跌分类：处理类别不平衡，在验证集选择概率阈值 |
+| `M07` | M07 · 决策树回归：用验证误差选择深度，观察过拟合 |
+| `M08` | M08 · 随机森林：学习非线性，和训练均值基准比较 |
+| `M09` | M09 · HistGradientBoosting：原生处理缺失值的提升树 |
+| `M10` | M10 · XGBoost（可选依赖）：按时间验证与 early stopping |
+| `M11` | M11 · TimeSeriesSplit + GridSearchCV：带间隔的时间调参 |
+| `M12` | M12 · 多资产面板 Walk-forward：按日期成块滚动训练 |
+| `M13` | M13 · 验证集 Permutation Importance：哪些特征影响预测误差 |
+| `M14` | M14 · 回归诊断：残差、Rank IC 与基准误差 |
+| `M15` | M15 · PCA 降维：只用训练期拟合，再投影未来数据 |
+| `M16` | M16 · 模型预测 → 仓位 → 样本外日内回测 |
+
+本册共 16 个可独立执行的模板。
 
 [查看所有图表预览](GALLERY.md)

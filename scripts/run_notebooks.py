@@ -66,11 +66,12 @@ def main():
     parser.add_argument('--write', action='store_true')
     parser.add_argument('--html', action='store_true')
     parser.add_argument('--check-recipes', action='store_true')
+    parser.add_argument('--require-optional', action='store_true', help='Fail if a recipe skips its optional dependency.')
     parser.add_argument('--notebook', action='append', help='Optional notebook filename to run.')
     args = parser.parse_args()
     artifacts = ROOT / 'artifacts'
     artifacts.mkdir(exist_ok=True)
-    files = sorted((ROOT / 'notebooks').glob('0[123]*_*.ipynb'))
+    files = sorted((ROOT / 'notebooks').glob('0[1234]*_*.ipynb'))
     if args.notebook:
         files = [p for p in files if p.name in args.notebook]
     if not files:
@@ -102,13 +103,28 @@ def main():
             html_dir.mkdir(exist_ok=True)
             (html_dir / (path.stem + '.html')).write_text(body, encoding='utf-8')
         images = sum('image/png' in o.get('data', {}) for c in code_cells for o in c.outputs)
+        optional_recipes = {c.metadata['recipe_id'] for c in code_cells if c.metadata.get('optional_package')}
+        plotted_recipes = {c.metadata.get('recipe_id') for c in code_cells
+                           if any('image/png' in o.get('data', {}) for o in c.outputs)}
         result = {'notebook': path.name, 'cells': len(nb.cells), 'code_cells': len(code_cells),
                   'independently_checked_recipes': recipes, 'embedded_figures': images, 'errors': 0}
+        if optional_recipes:
+            result['skipped_optional_recipes'] = sorted(optional_recipes - plotted_recipes)
+            if args.require_optional and result['skipped_optional_recipes']:
+                raise AssertionError('Required optional recipes skipped: ' + ', '.join(result['skipped_optional_recipes']))
         results.append(result)
         print(json.dumps(result, ensure_ascii=False), flush=True)
     import numpy, pandas, matplotlib
     report = {'python': platform.python_version(), 'numpy': numpy.__version__,
               'pandas': pandas.__version__, 'matplotlib': matplotlib.__version__, 'results': results}
+    if any(p.name.startswith('04_') for p in files):
+        import sklearn
+        report['scikit-learn'] = sklearn.__version__
+        try:
+            import xgboost
+            report['xgboost'] = xgboost.__version__
+        except (ImportError, OSError, ValueError):
+            report['xgboost'] = 'unavailable (M10 skipped)'
     report_path = (ROOT / 'docs' if args.write else artifacts) / 'validation.json'
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
 

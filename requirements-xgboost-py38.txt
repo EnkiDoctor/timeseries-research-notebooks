@@ -1,0 +1,3 @@
+# Optional M10 dependency, tested with Python 3.8.20 and sklearn 1.3.2.
+# Install requirements-py38.txt first.
+xgboost==2.0.3

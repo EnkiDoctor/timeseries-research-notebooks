@@ -24,10 +24,12 @@ jobs:
         run: |
           if [ "${{ matrix.python-version }}" = "3.8" ]; then
             python -m pip install -r requirements-py38.txt
+            python -m pip install -r requirements-xgboost-py38.txt
           else
             python -m pip install -r requirements.txt
+            python -m pip install -r requirements-xgboost.txt
           fi
       - name: Validate full notebooks and independent recipes
         env:
           MPLBACKEND: Agg
-        run: python scripts/run_notebooks.py --check-recipes --html
+        run: python scripts/run_notebooks.py --check-recipes --html --require-optional
